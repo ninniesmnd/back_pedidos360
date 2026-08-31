@@ -2,6 +2,7 @@ package com.pedidos.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +21,11 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/pedidos").hasAnyAuthority(
+                        "APPROLE_Cliente", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
+                .requestMatchers(HttpMethod.GET, "/api/pedidos/mis-pedidos").hasAuthority("APPROLE_Cliente")
+                .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/estado").hasAnyAuthority(
+                        "APPROLE_OperadorCocina", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                 .requestMatchers("/api/pedidos/cocina/**").hasAuthority("APPROLE_OperadorCocina")
                 .requestMatchers("/api/pedidos/despacho/**").hasAuthority("APPROLE_Repartidor")
                 .requestMatchers("/api/pedidos/admin/**").hasAnyAuthority("APPROLE_AdminLocal", "APPROLE_AdminGeneral")
