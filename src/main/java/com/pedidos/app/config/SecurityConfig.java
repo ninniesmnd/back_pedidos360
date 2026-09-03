@@ -28,7 +28,7 @@ public class SecurityConfig {
                     .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/pedidos").hasAnyAuthority(
                             "APPROLE_Cliente", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
-                    .requestMatchers(HttpMethod.GET, "/api/pedidos/mis-pedidos").hasAuthority("APPROLE_Cliente")
+                    .requestMatchers(HttpMethod.GET, "/api/pedidos/mis-pedidos").hasAnyAuthority("APPROLE_Cliente", "APPROLE_OperadorCocina", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                     .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/estado").hasAnyAuthority(
                             "APPROLE_OperadorCocina", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                     .requestMatchers("/api/pedidos/cocina/**").hasAuthority("APPROLE_OperadorCocina")
