@@ -5,7 +5,10 @@ import com.pedidos.app.dto.CrearPedidoRequest;
 import com.pedidos.app.model.EstadoPedido;
 import com.pedidos.app.model.ItemPedido;
 import com.pedidos.app.model.Pedido;
+import com.pedidos.app.model.TipoDespacho;
 import com.pedidos.app.repository.PedidoRepository;
+import com.pedidos.app.repository.UsuarioLocalRepository;
+import com.pedidos.app.model.UsuarioLocal;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,17 +25,14 @@ import java.util.List;
 public class PedidosController {
 
     private final PedidoRepository pedidoRepository;
+    private final UsuarioLocalRepository usuarioLocalRepository;
 
-    public PedidosController(PedidoRepository pedidoRepository) {
+    public PedidosController(PedidoRepository pedidoRepository, UsuarioLocalRepository usuarioLocalRepository) {
         this.pedidoRepository = pedidoRepository;
+        this.usuarioLocalRepository = usuarioLocalRepository;
     }
 
-    @GetMapping("/cocina/ping")
-    public String pingCocina() {
-        return "OK - autenticado como OperadorCocina o superior";
-    }
-
-    // CU-02: Cliente, AdminLocal o AdminGeneral crean un pedido
+    // CU-02
     @PostMapping
     public ResponseEntity<Pedido> crearPedido(@Valid @RequestBody CrearPedidoRequest request,
                                                @AuthenticationPrincipal Jwt jwt) {
@@ -54,31 +54,40 @@ public class PedidosController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoRepository.save(pedido));
     }
 
-    // CU-02 (consulta): Cliente ve sus propios pedidos
     @GetMapping("/mis-pedidos")
     public List<Pedido> misPedidos(@AuthenticationPrincipal Jwt jwt) {
         return pedidoRepository.findByClienteEmailOrderByFechaCreacionDesc(extraerEmail(jwt));
     }
 
-    // CU-04: OperadorCocina ve pedidos recien recibidos de su local
+    // Ahora usa el local del propio usuario (tabla usuarios_local), ya no un query param.
+    // Incluye RECIBIDO + EN_PREPARACION para que el pedido no "desaparezca" apenas se empieza a preparar.
     @GetMapping("/cocina")
-    public List<Pedido> pedidosParaCocina(@RequestParam Long localId) {
-        return pedidoRepository.findByLocalIdAndEstado(localId, EstadoPedido.RECIBIDO);
+    public List<Pedido> pedidosParaCocina(@AuthenticationPrincipal Jwt jwt) {
+        Long localId = obtenerLocalDelUsuario(jwt);
+        return pedidoRepository.findByLocalIdAndEstadoIn(
+                localId, List.of(EstadoPedido.RECIBIDO, EstadoPedido.EN_PREPARACION));
     }
 
-    // CU-04: Repartidor ve pedidos listos para reparto
+    // Ahora filtra solo DELIVERY: el Repartidor no debe ver retiros en tienda.
     @GetMapping("/despacho")
     public List<Pedido> pedidosParaDespacho() {
-        return pedidoRepository.findByEstado(EstadoPedido.LISTO_PARA_DESPACHO);
+        return pedidoRepository.findByEstadoAndTipoDespacho(EstadoPedido.LISTO_PARA_DESPACHO, TipoDespacho.DELIVERY);
     }
 
-    // CU-04: AdminLocal/AdminGeneral ven el listado de su local
+    // AdminGeneral puede pasar cualquier localId (o ninguno, para ver todos).
+    // AdminLocal SIEMPRE queda restringido a su propio local, sin importar qué mande en el query param.
     @GetMapping("/admin")
-    public List<Pedido> listarPedidos(@RequestParam Long localId) {
-        return pedidoRepository.findByLocalIdOrderByFechaCreacionDesc(localId);
+    public List<Pedido> listarPedidos(@RequestParam(required = false) Long localId,
+                                       @AuthenticationPrincipal Jwt jwt) {
+        if (tieneRol(jwt, "AdminGeneral")) {
+            return localId != null
+                    ? pedidoRepository.findByLocalIdOrderByFechaCreacionDesc(localId)
+                    : pedidoRepository.findAll();
+        }
+        Long miLocalId = obtenerLocalDelUsuario(jwt);
+        return pedidoRepository.findByLocalIdOrderByFechaCreacionDesc(miLocalId);
     }
 
-    // CU-03: cambiar estado (OperadorCocina, AdminLocal, AdminGeneral)
     @PatchMapping("/{id}/estado")
     public Pedido cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoRequest request) {
         Pedido pedido = pedidoRepository.findById(id)
@@ -91,5 +100,18 @@ public class PedidosController {
     private String extraerEmail(Jwt jwt) {
         String email = jwt.getClaimAsString("preferred_username");
         return email != null ? email : jwt.getClaimAsString("email");
+    }
+
+    private boolean tieneRol(Jwt jwt, String rol) {
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        return roles != null && roles.contains(rol);
+    }
+
+    private Long obtenerLocalDelUsuario(Jwt jwt) {
+        String email = extraerEmail(jwt);
+        return usuarioLocalRepository.findByEmail(email)
+                .map(UsuarioLocal::getLocalId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "El usuario " + email + " no está asociado a ningún local"));
     }
 }
