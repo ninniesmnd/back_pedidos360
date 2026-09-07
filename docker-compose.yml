@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 5
 
-pedidos-service:
+  pedidos-service:
     build: .
     restart: unless-stopped
     depends_on:
