@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 5
 
-  pedidos-service:
+pedidos-service:
     build: .
     restart: unless-stopped
     depends_on:
@@ -26,6 +26,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pedidos360
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "true"
+      SPRING_SQL_INIT_MODE: always
     ports:
       - "8080:8080"
     healthcheck:
