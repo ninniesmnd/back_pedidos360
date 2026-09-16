@@ -2,10 +2,11 @@
 -- 1. USUARIOS ASOCIADOS A LOCALES (Operadores de cocina, AdminLocal, etc.)
 -- =============================================================================
 INSERT INTO usuarios_local (id, email, local_id) VALUES
-(1, 'prueba@caso360.onmicrosoft.com', 1),
-(2, 'cocina.local2@tudominio.com', 2),
-(3, 'admin.local1@tudominio.com', 1),
-(4, 'admin.local2@tudominio.com', 2);
+  (1, 'prueba@caso360.onmicrosoft.com', 1),
+  (2, 'cocina.local2@tudominio.com', 2),
+  (3, 'admin.local1@tudominio.com', 1),
+  (4, 'admin.local2@tudominio.com', 2)
+ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- 2. PEDIDOS DE PRUEBA
