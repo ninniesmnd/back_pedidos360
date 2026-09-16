@@ -26,8 +26,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                // Catálogo: cualquier rol autenticado puede consultarlo (lo necesita el Cliente para armar su pedido).
                 .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/*").hasAnyAuthority(
                         "APPROLE_Cliente", "APPROLE_OperadorCocina", "APPROLE_Repartidor",
                         "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
@@ -37,7 +37,6 @@ public class SecurityConfig {
                         "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                 .requestMatchers(HttpMethod.PATCH, "/api/productos/*/estado").hasAnyAuthority(
                         "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
-                // Cocina puede rebajar stock al preparar (ej. se acaba un ingrediente).
                 .requestMatchers(HttpMethod.PATCH, "/api/productos/*/stock").hasAnyAuthority(
                         "APPROLE_AdminLocal", "APPROLE_AdminGeneral", "APPROLE_OperadorCocina")
                 .requestMatchers("/api/ventas/**").hasAnyAuthority(
