@@ -12,6 +12,7 @@ import com.pedidos.app.model.UsuarioLocal;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,7 @@ public class PedidosController {
 
     // CU-02
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('APPROLE_Cliente','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public ResponseEntity<Pedido> crearPedido(@Valid @RequestBody CrearPedidoRequest request,
                                                @AuthenticationPrincipal Jwt jwt) {
         Pedido pedido = new Pedido();
@@ -55,6 +57,7 @@ public class PedidosController {
     }
 
     @GetMapping("/mis-pedidos")
+    @PreAuthorize("hasAuthority('APPROLE_Cliente')")
     public List<Pedido> misPedidos(@AuthenticationPrincipal Jwt jwt) {
         return pedidoRepository.findByClienteEmailOrderByFechaCreacionDesc(extraerEmail(jwt));
     }
@@ -62,6 +65,7 @@ public class PedidosController {
     // Ahora usa el local del propio usuario (tabla usuarios_local), ya no un query param.
     // Incluye RECIBIDO + EN_PREPARACION para que el pedido no "desaparezca" apenas se empieza a preparar.
     @GetMapping("/cocina")
+    @PreAuthorize("hasAuthority('APPROLE_OperadorCocina')")
     public List<Pedido> pedidosParaCocina(@AuthenticationPrincipal Jwt jwt) {
         Long localId = obtenerLocalDelUsuario(jwt);
         return pedidoRepository.findByLocalIdAndEstadoIn(
@@ -70,6 +74,7 @@ public class PedidosController {
 
     // Ahora filtra solo DELIVERY: el Repartidor no debe ver retiros en tienda.
     @GetMapping("/despacho")
+    @PreAuthorize("hasAuthority('APPROLE_Repartidor')")
     public List<Pedido> pedidosParaDespacho() {
         return pedidoRepository.findByEstadoAndTipoDespacho(EstadoPedido.LISTO_PARA_DESPACHO, TipoDespacho.DELIVERY);
     }
@@ -77,6 +82,7 @@ public class PedidosController {
     // AdminGeneral puede pasar cualquier localId (o ninguno, para ver todos).
     // AdminLocal SIEMPRE queda restringido a su propio local, sin importar qué mande en el query param.
     @GetMapping("/admin")
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public List<Pedido> listarPedidos(@RequestParam(required = false) Long localId,
                                        @AuthenticationPrincipal Jwt jwt) {
         if (tieneRol(jwt, "AdminGeneral")) {
@@ -89,6 +95,7 @@ public class PedidosController {
     }
 
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyAuthority('APPROLE_OperadorCocina','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public Pedido cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoRequest request) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado: " + id));

@@ -8,6 +8,7 @@ import com.ventas.app.repository.ProductoRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,8 +25,8 @@ public class ProductoController {
         this.productoRepository = productoRepository;
     }
 
-    // CU-05 (catálogo): filtra por local si viene el query param.
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('APPROLE_Cliente','APPROLE_OperadorCocina','APPROLE_Repartidor','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public List<Producto> listarProductos(@RequestParam(required = false) Long localId) {
         return localId != null
                 ? productoRepository.findByLocalIdOrderByNombreAsc(localId)
@@ -33,11 +34,13 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('APPROLE_Cliente','APPROLE_OperadorCocina','APPROLE_Repartidor','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public Producto obtenerProducto(@PathVariable Long id) {
         return buscarOFallar(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public ResponseEntity<Producto> crearProducto(@Valid @RequestBody CrearProductoRequest request) {
         Producto producto = new Producto();
         aplicarDatos(producto, request);
@@ -45,6 +48,7 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public Producto editarProducto(@PathVariable Long id, @Valid @RequestBody CrearProductoRequest request) {
         Producto producto = buscarOFallar(id);
         aplicarDatos(producto, request);
@@ -52,8 +56,8 @@ public class ProductoController {
         return productoRepository.save(producto);
     }
 
-    // CU-05: rebajar/reponer stock.
     @PatchMapping("/{id}/stock")
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral','APPROLE_OperadorCocina')")
     public Producto actualizarStock(@PathVariable Long id, @Valid @RequestBody ActualizarStockRequest request) {
         Producto producto = buscarOFallar(id);
         int nuevoStock = producto.getStock() + request.delta();
@@ -67,6 +71,7 @@ public class ProductoController {
     }
 
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public Producto cambiarEstado(@PathVariable Long id, @Valid @RequestBody ActualizarEstadoProductoRequest request) {
         Producto producto = buscarOFallar(id);
         producto.setActivo(request.activo());

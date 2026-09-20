@@ -9,6 +9,7 @@ import com.ventas.app.repository.VentaRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,8 @@ public class VentaController {
         this.productoRepository = productoRepository;
     }
 
-    // Registro histórico de ventas. AdminGeneral puede filtrar por local o ver todas.
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public List<Venta> listarVentas(@RequestParam(required = false) Long localId) {
         return localId != null
                 ? ventaRepository.findByLocalIdOrderByFechaVentaDesc(localId)
@@ -39,6 +40,7 @@ public class VentaController {
 
     @PostMapping
     @Transactional
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public ResponseEntity<Venta> registrarVenta(@Valid @RequestBody CrearVentaRequest request,
                                                  @AuthenticationPrincipal Jwt jwt) {
         Venta venta = new Venta();
