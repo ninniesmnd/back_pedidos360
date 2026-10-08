@@ -5,6 +5,7 @@ import com.ventas.app.dto.ActualizarStockRequest;
 import com.ventas.app.dto.CrearProductoRequest;
 import com.ventas.app.model.Producto;
 import com.ventas.app.repository.ProductoRepository;
+import com.ventas.app.messaging.producer.VentasEventPublisher;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,11 @@ import java.util.List;
 public class ProductoController {
 
     private final ProductoRepository productoRepository;
+    private final VentasEventPublisher eventPublisher;
 
-    public ProductoController(ProductoRepository productoRepository) {
+    public ProductoController(ProductoRepository productoRepository, VentasEventPublisher eventPublisher) {
         this.productoRepository = productoRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -67,7 +70,9 @@ public class ProductoController {
         }
         producto.setStock(nuevoStock);
         producto.setFechaActualizacion(LocalDateTime.now());
-        return productoRepository.save(producto);
+        Producto guardado = productoRepository.save(producto);
+        eventPublisher.publicarStockBajoSiCorresponde(guardado);
+        return guardado;
     }
 
     @PatchMapping("/{id}/estado")

@@ -6,6 +6,7 @@ import com.ventas.app.model.Producto;
 import com.ventas.app.model.Venta;
 import com.ventas.app.repository.ProductoRepository;
 import com.ventas.app.repository.VentaRepository;
+import com.ventas.app.messaging.producer.VentasEventPublisher;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/ventas")
@@ -24,10 +26,14 @@ public class VentaController {
 
     private final VentaRepository ventaRepository;
     private final ProductoRepository productoRepository;
+    private final VentasEventPublisher eventPublisher;
 
-    public VentaController(VentaRepository ventaRepository, ProductoRepository productoRepository) {
+    public VentaController(VentaRepository ventaRepository,
+                           ProductoRepository productoRepository,
+                           VentasEventPublisher eventPublisher) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -49,6 +55,7 @@ public class VentaController {
         venta.setVendedorEmail(extraerEmail(jwt));
 
         double total = 0.0;
+        List<Producto>productosAfectados = new ArrayList<>();
         for (CrearVentaRequest.ItemVentaRequest itemReq : request.items()) {
             Producto producto = productoRepository.findById(itemReq.productoId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -61,6 +68,7 @@ public class VentaController {
             }
             producto.setStock(nuevoStock);
             productoRepository.save(producto);
+            productosAfectados.add(producto);
 
             ItemVenta item = new ItemVenta();
             item.setProductoId(producto.getId());
@@ -73,7 +81,10 @@ public class VentaController {
         }
         venta.setTotal(total);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ventaRepository.save(venta));
+        Venta guardada = ventaRepository.save(venta);
+        eventPublisher.publicarVentaRegistrada(guardada);
+        productosAfectados.forEach(eventPublisher::publicarStockBajoSiCorresponde);
+        return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
     }
 
     private String extraerEmail(Jwt jwt) {
