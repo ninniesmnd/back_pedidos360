@@ -9,6 +9,7 @@ import com.pedidos.app.model.TipoDespacho;
 import com.pedidos.app.repository.PedidoRepository;
 import com.pedidos.app.repository.UsuarioLocalRepository;
 import com.pedidos.app.model.UsuarioLocal;
+import com.pedidos.app.messaging.producer.PedidoEventPublisher;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +28,12 @@ public class PedidosController {
 
     private final PedidoRepository pedidoRepository;
     private final UsuarioLocalRepository usuarioLocalRepository;
+    private final PedidoEventPublisher eventPublisher;
 
-    public PedidosController(PedidoRepository pedidoRepository, UsuarioLocalRepository usuarioLocalRepository) {
+    public PedidosController(PedidoRepository pedidoRepository, UsuarioLocalRepository usuarioLocalRepository, PedidoEventPublisher eventPublisher) {
         this.pedidoRepository = pedidoRepository;
         this.usuarioLocalRepository = usuarioLocalRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     // CU-02
@@ -53,7 +56,9 @@ public class PedidosController {
             pedido.agregarItem(item);
         });
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoRepository.save(pedido));
+        Pedido guardado = pedidoRepository.save(pedido);
+        eventPublisher.publicarPedidoCreado(guardado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 
     @GetMapping("/mis-pedidos")
@@ -99,9 +104,12 @@ public class PedidosController {
     public Pedido cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoRequest request) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado: " + id));
+        EstadoPedido estadoAnterior = pedido.getEstado();
         pedido.setEstado(request.nuevoEstado());
         pedido.setFechaActualizacion(LocalDateTime.now());
-        return pedidoRepository.save(pedido);
+        Pedido guardado = pedidoRepository.save(pedido);
+        eventPublisher.publicarEstadoCambiado(guardado, estadoAnterior);
+        return guardado;
     }
 
     private String extraerEmail(Jwt jwt) {
