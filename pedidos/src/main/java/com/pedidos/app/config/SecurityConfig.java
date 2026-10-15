@@ -1,11 +1,13 @@
 package com.pedidos.app.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -13,7 +15,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -32,8 +33,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/pedidos").hasAnyAuthority(
                             "APPROLE_Cliente", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                     .requestMatchers(HttpMethod.GET, "/api/pedidos/mis-pedidos").hasAuthority("APPROLE_Cliente")
-                    .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/estado").hasAnyAuthority(
-                            "APPROLE_OperadorCocina", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
+                                        .requestMatchers(HttpMethod.PATCH, "/api/pedidos/*/estado").hasAnyAuthority(
+                            "APPROLE_OperadorCocina", "APPROLE_Repartidor", "APPROLE_AdminLocal", "APPROLE_AdminGeneral")
                     .requestMatchers("/api/pedidos/cocina/**").hasAuthority("APPROLE_OperadorCocina")
                     .requestMatchers("/api/pedidos/despacho/**").hasAuthority("APPROLE_Repartidor")
                     .requestMatchers("/api/pedidos/admin/**").hasAnyAuthority("APPROLE_AdminLocal", "APPROLE_AdminGeneral")

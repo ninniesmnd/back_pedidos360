@@ -99,8 +99,8 @@ public class PedidosController {
         return pedidoRepository.findByLocalIdOrderByFechaCreacionDesc(miLocalId);
     }
 
-    @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyAuthority('APPROLE_OperadorCocina','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
+        @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyAuthority('APPROLE_OperadorCocina','APPROLE_Repartidor','APPROLE_AdminLocal','APPROLE_AdminGeneral')")
     public Pedido cambiarEstado(@PathVariable Long id, @Valid @RequestBody CambiarEstadoRequest request) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido no encontrado: " + id));
