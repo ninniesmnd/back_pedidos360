@@ -1,4 +1,4 @@
-package com.ventas.app.messaging.error;
+package com.rabbitadmin.app.messaging.error;
 
 public class MensajeNoProcesableException extends RuntimeException {
     public MensajeNoProcesableException(String mensaje) {

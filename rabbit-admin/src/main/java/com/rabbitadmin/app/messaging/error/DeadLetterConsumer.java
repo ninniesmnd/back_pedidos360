@@ -1,4 +1,4 @@
-package com.ventas.app.messaging.error;
+package com.rabbitadmin.app.messaging.error;
 
 import com.rabbitmq.client.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +18,8 @@ import java.nio.charset.StandardCharsets;
 public class DeadLetterConsumer {
 
     @RabbitListener(queues = {
+            "${app.rabbitmq.dlq.notificaciones}",
+            "${app.rabbitmq.dlq.ticket-cocina}",
             "${app.rabbitmq.dlq.alertas-stock}",
             "${app.rabbitmq.dlq.comprobantes}"
     })

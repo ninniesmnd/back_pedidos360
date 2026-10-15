@@ -1,8 +1,8 @@
-package com.ventas.app.messaging.inventario;
+package com.rabbitadmin.app.messaging.cocina;
 
+import com.rabbitadmin.app.messaging.error.MensajeriaErrorHandler;
+import com.rabbitadmin.app.messaging.event.PedidoEvent;
 import com.rabbitmq.client.Channel;
-import com.ventas.app.messaging.error.MensajeriaErrorHandler;
-import com.ventas.app.messaging.event.StockBajoEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,18 +15,18 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class AlertaStockConsumer {
+public class TicketCocinaConsumer {
 
-    private final AlertaStockService alertaStockService;
+    private final TicketCocinaService ticketCocinaService;
     private final MensajeriaErrorHandler errorHandler;
 
-    @RabbitListener(queues = "${app.rabbitmq.queues.alertas-stock}")
-    public void consumir(@Payload StockBajoEvent evento,
+    @RabbitListener(queues = "${app.rabbitmq.queues.ticket-cocina}")
+    public void consumir(@Payload PedidoEvent evento,
                          Message message,
                          Channel channel,
                          @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
         try {
-            alertaStockService.registrarAlerta(evento);
+            ticketCocinaService.generarTicket(evento);
         } catch (Exception ex) {
             errorHandler.manejar(ex, message, channel, deliveryTag);
             return;

@@ -4,12 +4,14 @@ import com.rabbitadmin.app.dto.BindingRequest;
 import com.rabbitadmin.app.dto.ExchangeRequest;
 import com.rabbitadmin.app.dto.QueueRequest;
 import com.rabbitadmin.app.service.RabbitAdminService;
+import com.rabbitadmin.app.service.TopologyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.Map;
 
@@ -19,8 +21,14 @@ import java.util.Map;
 public class RabbitAdminController {
 
     private final RabbitAdminService service;
+    private final TopologyService topologyService;
 
     // ---- Colas ----
+    @PostMapping("/topology")
+    public ResponseEntity<Map<String, Object>> aprovisionar(@RequestParam String domain) {
+        int recursos = topologyService.aprovisionar(domain);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("domain", domain, "resources", recursos));
+    }
     @PostMapping("/queues")
     public ResponseEntity<Map<String, String>> crearCola(@Valid @RequestBody QueueRequest request) {
         service.crearCola(request);

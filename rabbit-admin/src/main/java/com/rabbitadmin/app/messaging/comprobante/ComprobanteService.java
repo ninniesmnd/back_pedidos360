@@ -1,7 +1,7 @@
-package com.ventas.app.messaging.comprobante;
+package com.rabbitadmin.app.messaging.comprobante;
 
-import com.ventas.app.messaging.error.MensajeNoProcesableException;
-import com.ventas.app.messaging.event.VentaRegistradaEvent;
+import com.rabbitadmin.app.messaging.error.MensajeNoProcesableException;
+import com.rabbitadmin.app.messaging.event.VentaRegistradaEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

@@ -1,8 +1,8 @@
-package com.ventas.app.messaging.comprobante;
+package com.rabbitadmin.app.messaging.comprobante;
 
 import com.rabbitmq.client.Channel;
-import com.ventas.app.messaging.error.MensajeriaErrorHandler;
-import com.ventas.app.messaging.event.VentaRegistradaEvent;
+import com.rabbitadmin.app.messaging.error.MensajeriaErrorHandler;
+import com.rabbitadmin.app.messaging.event.VentaRegistradaEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -1,7 +1,7 @@
-package com.pedidos.app.messaging.cocina;
+package com.rabbitadmin.app.messaging.cocina;
 
-import com.pedidos.app.messaging.error.MensajeNoProcesableException;
-import com.pedidos.app.messaging.event.PedidoEvent;
+import com.rabbitadmin.app.messaging.error.MensajeNoProcesableException;
+import com.rabbitadmin.app.messaging.event.PedidoEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

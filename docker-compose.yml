@@ -86,6 +86,8 @@ services:
         condition: service_healthy
       rabbit1:
         condition: service_healthy
+      rabbit-admin-service:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pedidos360
       SPRING_DATASOURCE_USERNAME: postgres
@@ -113,6 +115,8 @@ services:
       postgres-ventas:
         condition: service_healthy
       rabbit1:
+        condition: service_healthy
+      rabbit-admin-service:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-ventas:5432/ventas360

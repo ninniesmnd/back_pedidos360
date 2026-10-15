@@ -1,7 +1,7 @@
-package com.ventas.app.messaging.inventario;
+package com.rabbitadmin.app.messaging.inventario;
 
-import com.ventas.app.messaging.error.MensajeNoProcesableException;
-import com.ventas.app.messaging.event.StockBajoEvent;
+import com.rabbitadmin.app.messaging.error.MensajeNoProcesableException;
+import com.rabbitadmin.app.messaging.event.StockBajoEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

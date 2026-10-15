@@ -1,7 +1,7 @@
-package com.pedidos.app.messaging.notification;
+package com.rabbitadmin.app.messaging.notification;
 
-import com.pedidos.app.messaging.error.MensajeriaErrorHandler;
-import com.pedidos.app.messaging.event.PedidoEvent;
+import com.rabbitadmin.app.messaging.error.MensajeriaErrorHandler;
+import com.rabbitadmin.app.messaging.event.PedidoEvent;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;

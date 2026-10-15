@@ -1,6 +1,6 @@
-package com.ventas.app.messaging.error;
+package com.rabbitadmin.app.messaging.error;
 
-import com.ventas.app.config.RabbitMQProperties;
+import com.rabbitadmin.app.config.RabbitMQProperties;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
