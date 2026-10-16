@@ -9,7 +9,8 @@ public record RabbitMQProperties(
     public record Exchanges(String pedidos, String pedidosDlx, String ventas, String ventasDlx) {}
     public record Queues(String notificaciones, String ticketCocina, String alertasStock, String comprobantes) {}
     public record Dlq(String notificaciones, String ticketCocina, String alertasStock, String comprobantes) {}
-    public record RoutingKeys(String bindingNotificaciones, String bindingTicketCocina,
+    public record RoutingKeys(String pedidoCreado, String pedidoEstadoCambiado,
+                              String bindingNotificaciones, String bindingTicketCocina,
                               String stockBajo, String ventaRegistrada) {}
     public record Retry(int maxIntentos, long backoffMs) {}
 }

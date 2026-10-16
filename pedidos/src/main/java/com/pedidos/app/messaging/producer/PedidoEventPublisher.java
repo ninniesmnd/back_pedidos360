@@ -1,43 +1,57 @@
 package com.pedidos.app.messaging.producer;
 
-import com.pedidos.app.config.RabbitMQProperties;
 import com.pedidos.app.messaging.event.PedidoEvent;
 import com.pedidos.app.model.EstadoPedido;
 import com.pedidos.app.model.Pedido;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.AmqpException;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/** Cliente de rabbit-admin: la publicacion real a RabbitMQ ocurre alla. */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class PedidoEventPublisher {
 
-    private final RabbitTemplate rabbitTemplate;
-    private final RabbitMQProperties props;
+    private final RestClient restClient;
+
+    public PedidoEventPublisher(@Value("${app.rabbit-admin.url:http://localhost:8082}") String rabbitAdminUrl,
+                                @Value("${app.internal.api-key:dev-internal-key}") String apiKey) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(2));
+        factory.setReadTimeout(Duration.ofSeconds(3));
+        this.restClient = RestClient.builder()
+                .baseUrl(rabbitAdminUrl)
+                .defaultHeader("X-Internal-Key", apiKey)
+                .requestFactory(factory)
+                .build();
+    }
 
     public void publicarPedidoCreado(Pedido pedido) {
-        publicar(props.routingKeys().pedidoCreado(), construirEvento("PEDIDO_CREADO", pedido, null));
+        enviar("/api/eventos/pedidos/creado", construirEvento("PEDIDO_CREADO", pedido, null));
     }
 
     public void publicarEstadoCambiado(Pedido pedido, EstadoPedido estadoAnterior) {
-        publicar(props.routingKeys().pedidoEstadoCambiado(),
+        enviar("/api/eventos/pedidos/estado-cambiado",
                 construirEvento("PEDIDO_ESTADO_CAMBIADO", pedido, estadoAnterior));
     }
 
-    // If the broker is down the pedido is already saved: log and keep going (decoupled).
-    private void publicar(String routingKey, PedidoEvent evento) {
+    // Si rabbit-admin o el broker caen, el pedido ya esta guardado: se registra y se sigue (desacoplado).
+    private void enviar(String uri, PedidoEvent evento) {
         try {
-            rabbitTemplate.convertAndSend(props.exchanges().pedidos(), routingKey, evento);
-            log.info("Evento {} publicado (pedidoId={}, routingKey={})",
-                    evento.tipoEvento(), evento.pedidoId(), routingKey);
-        } catch (AmqpException ex) {
-            log.error("No se pudo publicar el evento {} del pedido {}: {}",
+            restClient.post()
+                    .uri(uri)
+                    .body(evento)
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("Evento {} enviado a rabbit-admin (pedidoId={})", evento.tipoEvento(), evento.pedidoId());
+        } catch (Exception ex) {
+            log.error("No se pudo enviar el evento {} del pedido {} a rabbit-admin: {}",
                     evento.tipoEvento(), evento.pedidoId(), ex.getMessage());
         }
     }
