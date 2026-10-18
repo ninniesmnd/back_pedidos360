@@ -4,9 +4,11 @@
 INSERT INTO usuarios_local (id, email, local_id) VALUES
   (1, 'prueba@caso360.onmicrosoft.com', 1),
   (2, 'cocina.local2@tudominio.com', 2),
-  (3, 'admin.local1@tudominio.com', 1),
+  (3, 'adminlocal1@caso360.onmicrosoft.com', 1),
   (4, 'admin.local2@tudominio.com', 2)
 ON CONFLICT (id) DO NOTHING;
+
+
 
 -- =============================================================================
 -- 2. PEDIDOS DE PRUEBA
