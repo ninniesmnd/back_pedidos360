@@ -17,36 +17,37 @@ public class KafkaTopicConfig {
     private final KafkaTopicsProperties props;
 
     @Bean
-    public NewTopic pedidosTopic() {
-        var t = props.pedidos();
+    public NewTopic entradaTopic() {
+        var t = props.entrada();
         return topic(t.name(), t.partitions(), t.retentionMs(), t.cleanupPolicy());
     }
 
     @Bean
-    public NewTopic ventasTopic() {
-        var t = props.ventas();
+    public NewTopic salidaTopic() {
+        var t = props.salida();
         return topic(t.name(), t.partitions(), t.retentionMs(), t.cleanupPolicy());
     }
 
     @Bean
-    public NewTopic pedidosDlt() {
-        return topic(KafkaTopicsProperties.dltDe(props.pedidos().name()),
+    public NewTopic entradaDlt() {
+        return topic(KafkaTopicsProperties.dltDe(props.entrada().name()),
                 props.dlt().partitions(), props.dlt().retentionMs(), TopicConfig.CLEANUP_POLICY_DELETE);
     }
 
     @Bean
-    public NewTopic ventasDlt() {
-        return topic(KafkaTopicsProperties.dltDe(props.ventas().name()),
+    public NewTopic salidaDlt() {
+        return topic(KafkaTopicsProperties.dltDe(props.salida().name()),
                 props.dlt().partitions(), props.dlt().retentionMs(), TopicConfig.CLEANUP_POLICY_DELETE);
     }
 
     private NewTopic topic(String name, int partitions, long retentionMs, String cleanupPolicy) {
+        int effectiveMinIsr = Math.min(Math.max(1, props.minInsyncReplicas()), Math.max(1, props.replicas()));
         return TopicBuilder.name(name)
                 .partitions(partitions)
                 .replicas(props.replicas())
                 .config(TopicConfig.RETENTION_MS_CONFIG, String.valueOf(retentionMs))
                 .config(TopicConfig.CLEANUP_POLICY_CONFIG, cleanupPolicy)
-                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
+                .config(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, String.valueOf(effectiveMinIsr))
                 .build();
     }
 }
