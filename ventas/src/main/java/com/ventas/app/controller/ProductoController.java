@@ -6,6 +6,7 @@ import com.ventas.app.dto.CrearProductoRequest;
 import com.ventas.app.model.Producto;
 import com.ventas.app.repository.ProductoRepository;
 import com.ventas.app.messaging.producer.VentasEventPublisher;
+import com.ventas.app.messaging.producer.VentasKafkaProducer;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,14 @@ public class ProductoController {
 
     private final ProductoRepository productoRepository;
     private final VentasEventPublisher eventPublisher;
+    private final VentasKafkaProducer kafkaProducer;
 
-    public ProductoController(ProductoRepository productoRepository, VentasEventPublisher eventPublisher) {
+    public ProductoController(ProductoRepository productoRepository,
+                              VentasEventPublisher eventPublisher,
+                              VentasKafkaProducer kafkaProducer) {
         this.productoRepository = productoRepository;
         this.eventPublisher = eventPublisher;
+        this.kafkaProducer = kafkaProducer;
     }
 
     @GetMapping
@@ -72,6 +77,7 @@ public class ProductoController {
         producto.setFechaActualizacion(LocalDateTime.now());
         Producto guardado = productoRepository.save(producto);
         eventPublisher.publicarStockBajoSiCorresponde(guardado);
+        kafkaProducer.publicarStockBajoSiCorresponde(guardado);
         return guardado;
     }
 

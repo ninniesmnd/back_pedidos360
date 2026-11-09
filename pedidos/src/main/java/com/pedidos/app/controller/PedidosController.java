@@ -9,7 +9,10 @@ import com.pedidos.app.model.TipoDespacho;
 import com.pedidos.app.repository.PedidoRepository;
 import com.pedidos.app.repository.UsuarioLocalRepository;
 import com.pedidos.app.model.UsuarioLocal;
+import com.pedidos.app.messaging.consumer.StreamingReaccionService;
+import com.pedidos.app.messaging.event.ResultadoStreamingEvent;
 import com.pedidos.app.messaging.producer.PedidoEventPublisher;
+import com.pedidos.app.messaging.producer.PedidoKafkaProducer;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,11 +32,19 @@ public class PedidosController {
     private final PedidoRepository pedidoRepository;
     private final UsuarioLocalRepository usuarioLocalRepository;
     private final PedidoEventPublisher eventPublisher;
+    private final PedidoKafkaProducer kafkaProducer;
+    private final StreamingReaccionService streamingReaccionService;
 
-    public PedidosController(PedidoRepository pedidoRepository, UsuarioLocalRepository usuarioLocalRepository, PedidoEventPublisher eventPublisher) {
+    public PedidosController(PedidoRepository pedidoRepository,
+                             UsuarioLocalRepository usuarioLocalRepository,
+                             PedidoEventPublisher eventPublisher,
+                             PedidoKafkaProducer kafkaProducer,
+                             StreamingReaccionService streamingReaccionService) {
         this.pedidoRepository = pedidoRepository;
         this.usuarioLocalRepository = usuarioLocalRepository;
         this.eventPublisher = eventPublisher;
+        this.kafkaProducer = kafkaProducer;
+        this.streamingReaccionService = streamingReaccionService;
     }
 
     // CU-02
@@ -58,6 +69,7 @@ public class PedidosController {
 
         Pedido guardado = pedidoRepository.save(pedido);
         eventPublisher.publicarPedidoCreado(guardado);
+        kafkaProducer.publicarPedidoCreado(guardado);
         return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 
@@ -109,7 +121,19 @@ public class PedidosController {
         pedido.setFechaActualizacion(LocalDateTime.now());
         Pedido guardado = pedidoRepository.save(pedido);
         eventPublisher.publicarEstadoCambiado(guardado, estadoAnterior);
+        kafkaProducer.publicarEstadoCambiado(guardado, estadoAnterior);
         return guardado;
+    }
+
+    @GetMapping("/admin/streaming")
+    @PreAuthorize("hasAnyAuthority('APPROLE_AdminLocal','APPROLE_AdminGeneral')")
+    public List<ResultadoStreamingEvent> streamingPorLocal(@RequestParam(required = false) Long localId,
+                                                           @AuthenticationPrincipal Jwt jwt) {
+        if (tieneRol(jwt, "AdminGeneral")) {
+            return streamingReaccionService.listarPorLocal(localId);
+        }
+        Long miLocalId = obtenerLocalDelUsuario(jwt);
+        return streamingReaccionService.listarPorLocal(miLocalId);
     }
 
     private String extraerEmail(Jwt jwt) {

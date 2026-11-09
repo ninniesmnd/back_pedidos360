@@ -7,6 +7,7 @@ import com.ventas.app.model.Venta;
 import com.ventas.app.repository.ProductoRepository;
 import com.ventas.app.repository.VentaRepository;
 import com.ventas.app.messaging.producer.VentasEventPublisher;
+import com.ventas.app.messaging.producer.VentasKafkaProducer;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,13 +28,16 @@ public class VentaController {
     private final VentaRepository ventaRepository;
     private final ProductoRepository productoRepository;
     private final VentasEventPublisher eventPublisher;
+    private final VentasKafkaProducer kafkaProducer;
 
     public VentaController(VentaRepository ventaRepository,
                            ProductoRepository productoRepository,
-                           VentasEventPublisher eventPublisher) {
+                           VentasEventPublisher eventPublisher,
+                           VentasKafkaProducer kafkaProducer) {
         this.ventaRepository = ventaRepository;
         this.productoRepository = productoRepository;
         this.eventPublisher = eventPublisher;
+        this.kafkaProducer = kafkaProducer;
     }
 
     @GetMapping
@@ -84,6 +88,8 @@ public class VentaController {
         Venta guardada = ventaRepository.save(venta);
         eventPublisher.publicarVentaRegistrada(guardada);
         productosAfectados.forEach(eventPublisher::publicarStockBajoSiCorresponde);
+        kafkaProducer.publicarVentaRegistrada(guardada);
+        productosAfectados.forEach(kafkaProducer::publicarStockBajoSiCorresponde);
         return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
     }
 
