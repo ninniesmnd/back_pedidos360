@@ -75,25 +75,25 @@ public class StreamingRunner {
     private void esperarTopicos() throws InterruptedException {
         Properties ap = new Properties();
         ap.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, props.bootstrapServers());
-        try (Admin admin = Admin.create(ap)) {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    Set<String> existentes = admin.listTopics().names().get(10, TimeUnit.SECONDS);
-                    if (existentes.contains(props.entrada()) && existentes.contains(props.salida())) {
-                        log.info("Topicos {} y {} disponibles", props.entrada(), props.salida());
-                        return;
-                    }
-                    log.info("Esperando topicos {} y {} (los crea kafka-admin)...", props.entrada(), props.salida());
-                } catch (InterruptedException ex) {
-                    throw ex;
-                } catch (Exception ex) {
-                    log.warn("Kafka aun no disponible: {}", ex.getMessage());
+        while (!Thread.currentThread().isInterrupted()) {
+            // Admin.create dentro del try: si Kafka aun no resuelve por DNS, se reintenta
+            try (Admin admin = Admin.create(ap)) {
+                Set<String> existentes = admin.listTopics().names().get(10, TimeUnit.SECONDS);
+                if (existentes.contains(props.entrada()) && existentes.contains(props.salida())) {
+                    log.info("Topicos {} y {} disponibles", props.entrada(), props.salida());
+                    return;
                 }
-                Thread.sleep(5000);
+                log.info("Esperando topicos {} y {} (los crea kafka-admin)...", props.entrada(), props.salida());
+            } catch (InterruptedException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                log.warn("Kafka aun no disponible: {}", ex.getMessage());
             }
+            Thread.sleep(5000);
         }
     }
 
+    
     @PreDestroy
     public void detener() {
         if (streams != null) streams.close(Duration.ofSeconds(10));
